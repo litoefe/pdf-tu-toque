@@ -60,9 +60,10 @@ if st.button("Generar PDF") and seleccionados:
         # Borrar archivo temporal
         os.remove(tmp_path)
 
-    output = io.BytesIO()
-    pdf.output(output)
-    output.seek(0)
+output = io.BytesIO()
+pdf.output(name=output)
+output.seek(0)
 
-    st.success("✅ PDF generado correctamente.")
-    st.download_button("📥 Descargar PDF", output, file_name="tu_toque.pdf", mime="application/pdf")
+st.success("✅ PDF generado correctamente.")
+st.download_button("📥 Descargar PDF", output, file_name="tu_toque.pdf", mime="application/pdf")
+
