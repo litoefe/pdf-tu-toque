@@ -60,10 +60,15 @@ if st.button("Generar PDF") and seleccionados:
         # Borrar archivo temporal
         os.remove(tmp_path)
 
-output = io.BytesIO()
-pdf.output(name=output)
-output.seek(0)
+    # Guardar el PDF en archivo temporal
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
+        pdf.output(tmp_pdf.name)
 
-st.success("✅ PDF generado correctamente.")
-st.download_button("📥 Descargar PDF", output, file_name="tu_toque.pdf", mime="application/pdf")
+    # Leer el PDF y devolverlo como bytes
+    with open(tmp_pdf.name, "rb") as f:
+        pdf_bytes = f.read()
 
+    os.remove(tmp_pdf.name)
+
+    st.success("✅ PDF generado correctamente.")
+    st.download_button("📥 Descargar PDF", pdf_bytes, file_name="tu_toque.pdf", mime="application/pdf")
