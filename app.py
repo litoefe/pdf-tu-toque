@@ -28,7 +28,15 @@ st.markdown("Seleccioná los destinos que querés combinar en un solo PDF:")
 
 seleccionados = st.multiselect("Destinos", paquetes)
 
-if st.button("Generar PDF") and seleccionados:
+# Espacio entre selector y botón
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# Centrar el botón con columnas
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    generar = st.button("🚀 Generar PDF")
+
+if generar and seleccionados:
     orden = ["00_portada.jpg", "01_intro_tu_toque.jpg"] + seleccionados + ["99_cierre.jpg"]
     
     pdf = FPDF(orientation='P', unit='pt', format=[1080, 1920])  # Tamaño real en puntos (1pt = 1px a 72dpi)
