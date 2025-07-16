@@ -31,7 +31,7 @@ seleccionados = st.multiselect("Destinos", paquetes)
 if st.button("Generar PDF") and seleccionados:
     orden = ["00_portada.jpg", "01_intro_tu_toque.jpg"] + seleccionados + ["99_cierre.jpg"]
     
-    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf = FPDF(orientation='P', unit='pt', format=[1080, 1920])  # Tamaño real en puntos (1pt = 1px a 72dpi)
     
     for archivo in orden:
         file_id = drive_images.get(archivo)
@@ -48,27 +48,18 @@ if st.button("Generar PDF") and seleccionados:
             st.error(f"No se pudo abrir la imagen: {archivo}")
             continue
 
-        # Convertir tamaño original de imagen a milímetros
-        width_px, height_px = image.size
-        dpi = 96
-        width_mm = width_px * 25.4 / dpi
-        height_mm = height_px * 25.4 / dpi
-
-        # Guardar imagen como archivo temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
             image.save(tmp_file, format="JPEG")
             tmp_path = tmp_file.name
 
         pdf.add_page()
-        pdf.image(tmp_path, x=0, y=0, w=width_mm, h=height_mm)
+        pdf.image(tmp_path, x=0, y=0)  # Inserta imagen con tamaño original
 
         os.remove(tmp_path)
 
-    # Guardar PDF como archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
         pdf.output(tmp_pdf.name)
 
-    # Leer y servir el PDF
     with open(tmp_pdf.name, "rb") as f:
         pdf_bytes = f.read()
 
