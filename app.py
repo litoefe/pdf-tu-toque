@@ -48,23 +48,27 @@ if st.button("Generar PDF") and seleccionados:
             st.error(f"No se pudo abrir la imagen: {archivo}")
             continue
 
+        # Convertir tamaño original de imagen a milímetros
+        width_px, height_px = image.size
+        dpi = 96
+        width_mm = width_px * 25.4 / dpi
+        height_mm = height_px * 25.4 / dpi
+
         # Guardar imagen como archivo temporal
-        image = image.resize((595, 842))  # A4 en píxeles aprox. 72dpi
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
             image.save(tmp_file, format="JPEG")
             tmp_path = tmp_file.name
 
         pdf.add_page()
-        pdf.image(tmp_path, x=0, y=0, w=210, h=297)
+        pdf.image(tmp_path, x=0, y=0, w=width_mm, h=height_mm)
 
-        # Borrar archivo temporal
         os.remove(tmp_path)
 
-    # Guardar el PDF en archivo temporal
+    # Guardar PDF como archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_pdf:
         pdf.output(tmp_pdf.name)
 
-    # Leer el PDF y devolverlo como bytes
+    # Leer y servir el PDF
     with open(tmp_pdf.name, "rb") as f:
         pdf_bytes = f.read()
 
