@@ -48,20 +48,17 @@ if st.button("Generar PDF") and seleccionados:
             st.error(f"No se pudo abrir la imagen: {archivo}")
             continue
 
-     import tempfile
-import os
+        # Guardar imagen como archivo temporal
+        image = image.resize((595, 842))  # A4 en píxeles aprox. 72dpi
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+            image.save(tmp_file, format="JPEG")
+            tmp_path = tmp_file.name
 
-image = image.resize((595, 842))  # A4 en píxeles aprox. 72dpi
+        pdf.add_page()
+        pdf.image(tmp_path, x=0, y=0, w=210, h=297)
 
-with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-    image.save(tmp_file, format="JPEG")
-    tmp_path = tmp_file.name
-
-pdf.add_page()
-pdf.image(tmp_path, x=0, y=0, w=210, h=297)
-
-# Borra el archivo temporal
-os.remove(tmp_path)
+        # Borrar archivo temporal
+        os.remove(tmp_path)
 
     output = io.BytesIO()
     pdf.output(output)
