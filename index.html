@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>¿Quién baja? — Gran Premio del Delivery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #1a1a1a;
+      --card: #161616;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --accent: #ff4444;
+      --green: #00ff88;
+      --yellow: #ffd700;
+      --orange: #ff8800;
+      --yellow-green: #aaff00;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    body {
+      width: 100%;
+      padding: 24px 16px 48px;
+    }
+
+    .wrapper {
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ---- screens ---- */
+    .screen {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- typography ---- */
+    .title-huge {
+      font-size: clamp(2.4rem, 10vw, 3.6rem);
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.1;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      font-variant: small-caps;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 3px;
+      margin-top: 4px;
+    }
+
+    .player-name-display {
+      font-size: clamp(1.8rem, 8vw, 2.8rem);
+      font-weight: 900;
+      text-align: center;
+      margin: 16px 0 8px;
+      word-break: break-word;
+    }
+
+    .hint {
+      font-variant: small-caps;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    .turn-label {
+      font-variant: small-caps;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    /* ---- semaphore ---- */
+    .semaphore {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin: 20px auto;
+      width: fit-content;
+    }
+
+    .light {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #3a0000, #1a0000);
+      border: 2px solid #2a0000;
+      transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .light.on {
+      background: radial-gradient(circle at 35% 35%, #ff6666, #ff0000);
+      border-color: #ff4444;
+      box-shadow: 0 0 18px #ff0000cc, 0 0 40px #ff000055;
+    }
+
+    .light.off {
+      background: radial-gradient(circle at 35% 35%, #0a0000, #050000);
+      border-color: #1a0000;
+      box-shadow: none;
+    }
+
+    /* ---- GO signal ---- */
+    .go-signal {
+      text-align: center;
+      font-size: clamp(3rem, 14vw, 5rem);
+      font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 20px #00ff8899, 0 0 50px #00ff8844, 0 0 80px #00ff8822;
+      letter-spacing: 6px;
+      margin: 24px 0;
+      animation: pulse-green 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-green {
+      from { text-shadow: 0 0 20px #00ff8899, 0 0 50px #00ff8844; }
+      to   { text-shadow: 0 0 30px #00ff88cc, 0 0 70px #00ff8866, 0 0 100px #00ff8833; }
+    }
+
+    /* ---- buttons ---- */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+      letter-spacing: 0.5px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff4444, #cc2222);
+      color: #fff;
+      margin-top: 24px;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-secondary {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      margin-top: 16px;
+    }
+    .btn-secondary:hover:not(:disabled) { background: #222; }
+
+    .btn-toque {
+      background: linear-gradient(135deg, #ff6600, #ff4400);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 22px;
+      margin-top: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px #ff440055;
+    }
+    .btn-toque:hover:not(:disabled) {
+      box-shadow: 0 6px 32px #ff440088;
+      transform: translateY(-2px);
+    }
+    .btn-toque:active { transform: scale(0.97) translateY(0); }
+
+    /* ---- form elements ---- */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-variant: small-caps;
+      letter-spacing: 1px;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus {
+      border-color: #555;
+    }
+
+    input[type="number"] {
+      max-width: 120px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .names-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .name-field { display: none; }
+    .name-field.visible { display: block; }
+
+    /* ---- divider ---- */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    /* ---- result cards ---- */
+    .result-box {
+      border-radius: 14px;
+      padding: 20px 24px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .result-false-start {
+      background: #1a0000;
+      border: 2px solid var(--accent);
+    }
+
+    .result-false-start .fs-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .result-false-start .fs-penalty {
+      color: #ff8888;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .result-time {
+      font-size: clamp(2.5rem, 12vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .result-comment {
+      font-size: 1rem;
+      margin-top: 8px;
+      color: var(--text-muted);
+    }
+
+    /* ---- ranking ---- */
+    .ranking-title {
+      font-variant: small-caps;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .ranking-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-left: 4px solid var(--border);
+    }
+
+    .ranking-row.rank-1 { border-left-color: #ffd700; }
+    .ranking-row.rank-2 { border-left-color: #c0c0c0; }
+    .ranking-row.rank-3 { border-left-color: #cd7f32; }
+
+    .rank-pos { font-size: 1.3rem; min-width: 32px; }
+    .rank-name { flex: 1; font-weight: 700; font-size: 1rem; }
+    .rank-time { font-weight: 700; font-size: 1rem; }
+
+    /* ---- loser box ---- */
+    .loser-box {
+      background: #110000;
+      border: 2px solid var(--accent);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      margin: 28px 0;
+    }
+
+    .loser-label {
+      font-size: 1rem;
+      color: #ff8888;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .loser-name {
+      font-size: clamp(2rem, 10vw, 3.2rem);
+      font-weight: 900;
+      color: #fff;
+      margin: 10px 0;
+      word-break: break-word;
+    }
+
+    .loser-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ---- error ---- */
+    .error-msg {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-top: 8px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    /* ---- misc ---- */
+    .spacer { height: 16px; }
+    .spacer-sm { height: 8px; }
+
+    .center { text-align: center; }
+
+    .penalty-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    /* mobile tweaks */
+    @media (max-width: 360px) {
+      .light { width: 36px; height: 36px; }
+      .semaphore { gap: 8px; padding: 16px; }
+      .names-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ============================================================ REGISTRO -->
+  <div id="screen-registro" class="screen active">
+    <div class="spacer"></div>
+    <div class="title-huge">🛵 ¿QUIÉN BAJA?</div>
+    <div class="subtitle">Gran Premio del Delivery</div>
+
+    <div class="semaphore" id="reg-semaphore">
+      <div class="light" id="reg-l0"></div>
+      <div class="light" id="reg-l1"></div>
+      <div class="light" id="reg-l2"></div>
+      <div class="light" id="reg-l3"></div>
+      <div class="light" id="reg-l4"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-group center">
+      <label for="num-pilotos">¿Cuántos pilotos largan?</label>
+      <input type="number" id="num-pilotos" min="2" max="6" value="4" />
+    </div>
+
+    <div class="names-grid" id="names-grid">
+      <div class="name-field" id="nf-0">
+        <label for="name-0">Piloto 1</label>
+        <input type="text" id="name-0" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+      <div class="name-field" id="nf-1">
+        <label for="name-1">Piloto 2</label>
+        <input type="text" id="name-1" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+      <div class="name-field" id="nf-2">
+        <label for="name-2">Piloto 3</label>
+        <input type="text" id="name-2" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+      <div class="name-field" id="nf-3">
+        <label for="name-3">Piloto 4</label>
+        <input type="text" id="name-3" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+      <div class="name-field" id="nf-4">
+        <label for="name-4">Piloto 5</label>
+        <input type="text" id="name-4" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+      <div class="name-field" id="nf-5">
+        <label for="name-5">Piloto 6</label>
+        <input type="text" id="name-5" placeholder="Nombre..." autocomplete="off" maxlength="20" />
+      </div>
+    </div>
+
+    <div class="error-msg" id="reg-error"></div>
+
+    <button class="btn btn-primary" id="btn-largar">🏁 ¡Que larguen!</button>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============================================================ TURNO -->
+  <div id="screen-turno" class="screen">
+    <div class="spacer"></div>
+    <div class="turn-label" id="turno-label">Turno 1 de 4</div>
+    <div class="player-name-display" id="turno-nombre">🪖 NOMBRE</div>
+    <div class="hint">Esperá la señal — ¡No arranques antes!</div>
+
+    <div class="semaphore">
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-grilla">🚦 Entrar a la grilla</button>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============================================================ ANIMACION -->
+  <div id="screen-animacion" class="screen">
+    <div class="spacer"></div>
+    <div class="player-name-display" id="anim-nombre">🪖 NOMBRE</div>
+    <div class="hint">Preparate...</div>
+
+    <div class="semaphore" id="anim-semaphore">
+      <div class="light" id="anim-l0"></div>
+      <div class="light" id="anim-l1"></div>
+      <div class="light" id="anim-l2"></div>
+      <div class="light" id="anim-l3"></div>
+      <div class="light" id="anim-l4"></div>
+    </div>
+
+    <button class="btn btn-toque" id="btn-toque-anim">🛵 ¡TOQUE!</button>
+    <div class="penalty-note">Salida anticipada = +2000 ms de penalización</div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============================================================ SEÑAL -->
+  <div id="screen-senal" class="screen">
+    <div class="spacer"></div>
+    <div class="player-name-display" id="senal-nombre">🪖 NOMBRE</div>
+
+    <div class="semaphore" id="senal-semaphore">
+      <div class="light off"></div>
+      <div class="light off"></div>
+      <div class="light off"></div>
+      <div class="light off"></div>
+      <div class="light off"></div>
+    </div>
+
+    <div class="go-signal">¡ ARRANCÁ !</div>
+
+    <button class="btn btn-toque" id="btn-toque-senal">🛵 ¡ T O Q U E !</button>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============================================================ RESULTADO -->
+  <div id="screen-resultado" class="screen">
+    <div class="spacer"></div>
+    <div class="player-name-display" id="res-nombre">NOMBRE</div>
+
+    <div id="res-false-start" class="result-box result-false-start" style="display:none;">
+      <div class="fs-title">⛔ SALIDA FALSA</div>
+      <div class="fs-penalty">Penalización: +2000 ms</div>
+    </div>
+
+    <div id="res-clean" style="display:none;">
+      <div class="result-box" id="res-time-box">
+        <div class="result-time" id="res-time-val">123ms</div>
+        <div class="result-comment" id="res-comment">Buen tiempo</div>
+      </div>
+    </div>
+
+    <div id="res-ranking-section" style="display:none;">
+      <div class="divider"></div>
+      <div class="ranking-title">Clasificación parcial</div>
+      <div id="res-ranking-list"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-siguiente">Siguiente piloto →</button>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ============================================================ FINAL -->
+  <div id="screen-final" class="screen">
+    <div class="spacer"></div>
+    <div class="title-huge">🏆 RESULTADOS</div>
+    <div class="subtitle">Gran Premio del Delivery</div>
+    <div class="divider"></div>
+
+    <div id="final-ranking-list"></div>
+
+    <div class="loser-box" id="loser-box">
+      <div class="loser-label">🛵 Le toca bajar</div>
+      <div class="loser-name" id="loser-name">NOMBRE</div>
+      <div class="loser-sub">📦 El delivery está esperando en la puerta</div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-replay">🔄 Jugar de nuevo</button>
+    <div class="spacer"></div>
+  </div>
+
+</div>
+
+<script>
+  // ------------------------------------------------------------------ state
+  let jugadores = [];
+  let tiempos = {};
+  let jugadorActual = 0;
+  let señalDada = false;
+  let señalTimestamp = 0;
+  let falseStart = false;
+  let pendingTimeouts = [];
+
+  // ------------------------------------------------------------------ util
+  function clearPendingTimeouts() {
+    pendingTimeouts.forEach(id => clearTimeout(id));
+    pendingTimeouts = [];
+  }
+
+  function later(fn, ms) {
+    const id = setTimeout(() => {
+      pendingTimeouts = pendingTimeouts.filter(x => x !== id);
+      fn();
+    }, ms);
+    pendingTimeouts.push(id);
+    return id;
+  }
+
+  // ------------------------------------------------------------------ routing
+  const screens = ['registro', 'turno', 'animacion', 'senal', 'resultado', 'final'];
+
+  function goTo(state) {
+    screens.forEach(s => {
+      const el = document.getElementById('screen-' + s);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById('screen-' + state);
+    if (target) {
+      target.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (state === 'turno')     setupTurno();
+    if (state === 'animacion') setupAnimacion();
+    if (state === 'senal')     setupSenal();
+    if (state === 'resultado') setupResultado();
+    if (state === 'final')     setupFinal();
+  }
+
+  // ------------------------------------------------------------------ semaphore helpers
+  function setLights(prefix, onCount, off = false) {
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById(prefix + i);
+      if (!el) continue;
+      el.classList.remove('on', 'off');
+      if (off) {
+        el.classList.add('off');
+      } else {
+        el.classList.add(i < onCount ? 'on' : '');
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ REGISTRO
+  const numInput = document.getElementById('num-pilotos');
+  const nameFields = document.querySelectorAll('.name-field');
+
+  function updateNameFields() {
+    const count = Math.min(6, Math.max(2, parseInt(numInput.value) || 4));
+    nameFields.forEach((el, i) => {
+      el.classList.toggle('visible', i < count);
+    });
+  }
+
+  numInput.addEventListener('input', updateNameFields);
+  updateNameFields();
+
+  document.getElementById('btn-largar').addEventListener('click', () => {
+    const count = Math.min(6, Math.max(2, parseInt(numInput.value) || 4));
+    const errEl = document.getElementById('reg-error');
+    errEl.textContent = '';
+
+    const nombres = [];
+    for (let i = 0; i < count; i++) {
+      const val = document.getElementById('name-' + i).value.trim();
+      if (!val) {
+        errEl.textContent = `¡Falta el nombre del Piloto ${i + 1}!`;
+        return;
+      }
+      nombres.push(val);
+    }
+
+    const lower = nombres.map(n => n.toLowerCase());
+    const dupes = lower.filter((n, i) => lower.indexOf(n) !== i);
+    if (dupes.length) {
+      errEl.textContent = '¡Hay nombres repetidos!';
+      return;
+    }
+
+    jugadores = nombres;
+    tiempos = {};
+    jugadorActual = 0;
+    goTo('turno');
+  });
+
+  // ------------------------------------------------------------------ TURNO
+  function setupTurno() {
+    clearPendingTimeouts();
+    señalDada = false;
+    falseStart = false;
+    const nombre = jugadores[jugadorActual];
+    document.getElementById('turno-label').textContent =
+      `Turno ${jugadorActual + 1} de ${jugadores.length}`;
+    document.getElementById('turno-nombre').textContent = '🪖 ' + nombre.toUpperCase();
+  }
+
+  document.getElementById('btn-grilla').addEventListener('click', () => {
+    goTo('animacion');
+  });
+
+  // ------------------------------------------------------------------ ANIMACION
+  function setupAnimacion() {
+    clearPendingTimeouts();
+    señalDada = false;
+    falseStart = false;
+
+    const nombre = jugadores[jugadorActual];
+    document.getElementById('anim-nombre').textContent = '🪖 ' + nombre.toUpperCase();
+
+    // reset lights
+    setLights('anim-l', 0);
+
+    // turn on lights one by one
+    for (let i = 0; i < 5; i++) {
+      later(() => setLights('anim-l', i + 1), 750 * (i + 1));
+    }
+
+    // after all 5 lit, random wait then GO
+    const randomDelay = 500 + Math.random() * 1500;
+    later(() => {
+      señalTimestamp = Date.now();
+      señalDada = true;
+      goTo('senal');
+    }, 750 * 5 + randomDelay);
+  }
+
+  document.getElementById('btn-toque-anim').addEventListener('click', () => {
+    if (!señalDada) {
+      clearPendingTimeouts();
+      falseStart = true;
+      tiempos[jugadores[jugadorActual]] = 2000; // penalty
+      goTo('resultado');
+    }
+  });
+
+  // ------------------------------------------------------------------ SEÑAL
+  function setupSenal() {
+    const nombre = jugadores[jugadorActual];
+    document.getElementById('senal-nombre').textContent = '🪖 ' + nombre.toUpperCase();
+  }
+
+  document.getElementById('btn-toque-senal').addEventListener('click', () => {
+    const ms = Date.now() - señalTimestamp;
+    tiempos[jugadores[jugadorActual]] = ms;
+    goTo('resultado');
+  });
+
+  // ------------------------------------------------------------------ RESULTADO
+  function timeColor(ms) {
+    if (ms < 250) return '#00ff88';
+    if (ms < 400) return '#aaff00';
+    if (ms < 650) return '#ffd700';
+    return '#ff8800';
+  }
+
+  function timeComment(ms) {
+    if (ms < 250) return '🔥 ¡Reflejos de piloto de F1!';
+    if (ms < 400) return '✅ Buen tiempo';
+    if (ms < 650) return '😬 Tiempo regular...';
+    return '🐢 Ese estuvo leeento...';
+  }
+
+  function buildRanking(jugadoresList, tiemposMap) {
+    return jugadoresList
+      .filter(n => tiemposMap[n] !== undefined)
+      .map(n => ({ name: n, ms: tiemposMap[n] }))
+      .sort((a, b) => a.ms - b.ms);
+  }
+
+  function medalEmoji(rank) {
+    if (rank === 0) return '🥇';
+    if (rank === 1) return '🥈';
+    if (rank === 2) return '🥉';
+    return `${rank + 1}°`;
+  }
+
+  function renderRankingRows(container, ranking) {
+    container.innerHTML = '';
+    ranking.forEach((entry, i) => {
+      const row = document.createElement('div');
+      row.className = 'ranking-row rank-' + (i + 1);
+      const timeStr = entry.ms >= 2000 && entry.isFalseStart
+        ? '⛔ +2000ms'
+        : entry.ms + 'ms';
+      row.innerHTML = `
+        <span class="rank-pos">${medalEmoji(i)}</span>
+        <span class="rank-name">${entry.name}</span>
+        <span class="rank-time" style="color:${timeColor(entry.ms)}">${entry.ms}ms</span>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function setupResultado() {
+    const nombre = jugadores[jugadorActual];
+    document.getElementById('res-nombre').textContent = nombre.toUpperCase();
+
+    const fsBox = document.getElementById('res-false-start');
+    const cleanBox = document.getElementById('res-clean');
+
+    if (falseStart) {
+      fsBox.style.display = '';
+      cleanBox.style.display = 'none';
+    } else {
+      fsBox.style.display = 'none';
+      cleanBox.style.display = '';
+      const ms = tiempos[nombre];
+      const timeVal = document.getElementById('res-time-val');
+      timeVal.textContent = ms + 'ms';
+      timeVal.style.color = timeColor(ms);
+      document.getElementById('res-comment').textContent = timeComment(ms);
+    }
+
+    // partial ranking
+    const played = jugadores.filter(n => tiempos[n] !== undefined);
+    const rankSection = document.getElementById('res-ranking-section');
+    if (played.length >= 2) {
+      rankSection.style.display = '';
+      const ranking = buildRanking(jugadores, tiempos);
+      renderRankingRows(document.getElementById('res-ranking-list'), ranking);
+    } else {
+      rankSection.style.display = 'none';
+    }
+
+    // button
+    const btn = document.getElementById('btn-siguiente');
+    const isLast = jugadorActual === jugadores.length - 1;
+    if (isLast) {
+      btn.textContent = '🏁 Ver resultados finales';
+      btn.onclick = () => goTo('final');
+    } else {
+      btn.textContent = 'Siguiente piloto →';
+      btn.onclick = () => {
+        jugadorActual++;
+        goTo('turno');
+      };
+    }
+  }
+
+  // ------------------------------------------------------------------ FINAL
+  function setupFinal() {
+    const ranking = buildRanking(jugadores, tiempos);
+    renderRankingRows(document.getElementById('final-ranking-list'), ranking);
+
+    // loser = last place (highest ms)
+    const loser = ranking[ranking.length - 1];
+    document.getElementById('loser-name').textContent = loser.name.toUpperCase();
+  }
+
+  document.getElementById('btn-replay').addEventListener('click', () => {
+    jugadores = [];
+    tiempos = {};
+    jugadorActual = 0;
+    señalDada = false;
+    señalTimestamp = 0;
+    falseStart = false;
+
+    // clear name inputs
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById('name-' + i);
+      if (el) el.value = '';
+    }
+    numInput.value = 4;
+    updateNameFields();
+    document.getElementById('reg-error').textContent = '';
+
+    goTo('registro');
+  });
+</script>
+</body>
+</html>
